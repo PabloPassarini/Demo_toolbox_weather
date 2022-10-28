@@ -2131,6 +2131,653 @@ class MetaL:
 
         return todos_mod, ranking_mod
 
+    def valid_maxf(self, val):
+        if val.isdigit() == True:
+            val = int(val)
+        elif val.isalnum() == True and val.isdigit() == False:
+            val = str(val)
+        elif val.isalnum() == False and val.isdigit() == False and val.isalpha() == False:
+            val = float(val)
+        
+        return val
+
+    def salvar_paramt(self):
+        img = pyscreenshot.grab(bbox=(0,25,1920,1040))
+        img.show()
+        img.save(r'C:\Users\pablo\Desktop\teste.png')
+
+    def data_prev(self, pts, media_ea, media_er, maior_ea, exat_maior, pre_maior, menor_ea, exat_menor, pre_menor, eixo_y_exato, eixo_y_predict, eixo_x):
+        self.laf_res = LabelFrame(self, text='Preview dos resultados', width=1250, height=950, font='Arial 12 bold', fg='white', bg=fundo).place(x=650, y=50)
+        Label(self, text='Pontuação (0-100): '+ str(pts) +'pts', font='Arial 12 bold', fg='white', bg=fundo).place(x=680, y=70)
+        media_ea = round(media_ea, 4)
+        Label(self, text='Média Erro absoluto: '+ str(media_ea), font='Arial 12 bold', fg='white', bg=fundo).place(x=680, y=100)
+        media_er = round(media_er, 4)
+        Label(self, text='Média Erro relativo: '+ str(media_er), font='Arial 12 bold', fg='white', bg=fundo).place(x=680, y=130)
+
+        Label(self, text='Maior erro absoluto: ' + str(round(maior_ea,4)), font='Arial 12 bold', fg='white', bg=fundo).place(x=680, y=160)
+        Label(self, text="Valor exato do maior EA: " + str(round(exat_maior,4)),font='Arial 12 bold', fg='white', bg=fundo).place(x=940, y=160)
+        Label(self, text="Predict do maior EA: " + str(round(pre_maior, 4)), font='Arial 12 bold', fg='white', bg=fundo).place(x=1200, y=160)
+
+        Label(self, text='Menor erro absoluto: ' + str(round(menor_ea,4)), font='Arial 12 bold', fg='white', bg=fundo).place(x=680, y=190)
+        Label(self, text="Valor exato do menor EA: " + str(round(exat_menor,4)),font='Arial 12 bold', fg='white', bg=fundo).place(x=940, y=190)
+        Label(self, text="Predict do menor EA: " + str(round(pre_menor, 4)), font='Arial 12 bold', fg='white', bg=fundo).place(x=1200, y=190)
+
+        figura = Figure(figsize=(12,7.3), dpi=100)
+        plot_r = figura.add_subplot(111)
+        plot_r.plot(eixo_x, eixo_y_exato,label='Exato', color='green')
+        plot_r.plot(eixo_x, eixo_y_predict, label='Predict', color='red')
+        plot_r.legend()
+        plot_r.grid(True)
+        plot_r.set_ylabel("Temperatura(°C)")
+        plot_r.set_xlabel("Comparações")
+
+        canvas = FigureCanvasTkAgg(figura, master=self)
+        canvas.draw()
+        canvas.get_tk_widget().pack()
+        canvas.get_tk_widget().place(x=680, y=240)
+
+        toolbar = NavigationToolbar2Tk(canvas, self)
+        toolbar.place(x=1150, y=10)
+        toolbar.update()
+    
+    def get_end(self, cidade):
+        Trat = Tratamento()
+        return Trat.retorna_end(cidade)
+
+    def gerar_preview_dt(self):
+        prev = Treinamento()
+        salvar_m = self.save_model.get()
+        
+
+
+        #cidade = self.get_end(self.data_s.get())
+        cidade = self.data_s.get()
+        indicador = self.ind_s.get()
+        divisao = int(self.por_trei.get())
+        criterio = self.criterion_v.get()
+        splitter = self.splitter_v.get()
+        maxd = int(self.maxd_v.get())             #* Max_depth
+        minsams = self.int_float(self.minsam_s_v.get())    #* Min_samples_split
+        minsaml = self.int_float(self.minsam_l_v.get())    #* Min_samples_leaf
+        minwei = float(self.minweifra_l_v.get())
+        maxfe = self.valid_maxf(self.maxfeat_v.get())
+        maxleaf = int(self.maxleaf_n.get())
+        
+        minim = float(self.minimp_dec.get())
+        ccp = float(self.ccp_alp_v.get())
+        n_tes = int(self.num_teste.get())
+
+        if indicador == 'Precipitação':
+            indicador = 3
+        elif indicador == 'Temperatura máxima':
+            indicador = 4
+        elif indicador == 'Temperatura mínima':
+            indicador = 5
+
+        pts, media_ea, media_er, maior_ea, exat_maior, pre_maior, menor_ea, exat_menor, pre_menor, eixo_y_exato, eixo_y_predict, eixo_x = prev.ArvoreDecisao(cidade, indicador, divisao, criterio, splitter, maxd, minsaml, maxfe, maxleaf, n_tes, minsams, minwei, minim, ccp, salvar_m)
+        self.data_prev(pts, media_ea, media_er, maior_ea, exat_maior, pre_maior, menor_ea, exat_menor, pre_menor, eixo_y_exato, eixo_y_predict, eixo_x)
+
+    def gerar_preview_nn(self):
+        prev = Treinamento()
+        salvar_m = self.save_model.get()
+        
+        cidade = self.get_end(self.data_s.get())
+        
+        indicador = self.ind_s.get()
+        if indicador == 'Precipitação':
+            indicador = 3
+        elif indicador == 'Temperatura máxima':
+            indicador = 4
+        elif indicador == 'Temperatura mínima':
+            indicador = 5
+    
+        divisao = int(self.por_trei.get())
+
+        activ = self.activation_v.get()
+        solv = self.solver_v.get()
+        alph = float(self.alpha_v.get())
+        batc = self.batch_size_v.get()
+        learn_r = self.learning_rate_v.get()
+        learn_r_ini = float(self.learning_rate_init_v.get())
+        powt = float(self.power_t_v.get())
+        maxit = int(self.max_iter_v.get())
+        shuf = self.shuffle_v.get()
+        tol = float(self.tol_v.get())
+        verb = self.verbose_v.get()
+        warms = self.warm_start_v.get()
+        moment = float(self.momentum_v.get())
+        neste = self.nesterovs_momentum_v.get()
+        earlyst = self.early_stopping_v.get()
+        valid = float(self.validation_fraction_v.get())
+        b1 = float(self.beta_1_v.get())
+        b2 = float(self.beta_2_v.get())
+        niter = int(self.n_iter_no_change_v.get())
+        maxfun = int(self.max_fun_v.get())
+        n_teste = int(self.num_teste.get())
+        pts, media_ea, media_er, maior_ea, exat_maior, pre_maior, menor_ea, exat_menor, pre_menor, eixo_y_exato, eixo_y_predict, eixo_x = prev.RedeNeural(cidade, indicador, divisao, n_teste, activ, solv, alph, batc, learn_r, learn_r_ini, powt, maxit, shuf, tol, verb, warms, moment, neste, earlyst, valid, b1, b2, niter, maxfun, salvar_m)
+
+        self.data_prev(pts, media_ea, media_er, maior_ea, exat_maior, pre_maior, menor_ea, exat_menor, pre_menor, eixo_y_exato, eixo_y_predict, eixo_x)
+    
+    def gerar_preview_svm(self):
+        prev = Treinamento()
+        salvar_m = self.save_model.get()
+        
+        cidade = self.get_end(self.data_s.get())
+        
+        indicador = self.ind_s.get()
+        if indicador == 'Precipitação':
+            indicador = 3
+        elif indicador == 'Temperatura máxima':
+            indicador = 4
+        elif indicador == 'Temperatura mínima':
+            indicador = 5
+    
+        divisao = int(self.por_trei.get())
+        n_teste = int(self.num_teste.get())
+        kern = self.kernel_v.get()
+        degre = self.degree_v.get()
+        gam = self.gamma_v.get()
+        coef = float(self.coef0_v.get())
+        t = float(self.tol_v.get())
+        c = float(self.c_v.get())
+        eps = float(self.epsilon_v.get())
+        shr = self.shrinking_v.get()
+        cach = float(self.cache_size_v.get())
+        verb = self.verbose_v.get()
+        maxi = int(self.maxiter_v.get())
+
+
+        pts, media_ea, media_er, maior_ea, exat_maior, pre_maior, menor_ea, exat_menor, pre_menor, eixo_y_exato, eixo_y_predict, eixo_x = prev.SVR(cidade, indicador, divisao, n_teste, kern, degre, gam, coef, t, c, eps, shr, cach, verb, maxi, salvar_m)
+
+        self.data_prev(pts, media_ea, media_er, maior_ea, exat_maior, pre_maior, menor_ea, exat_menor, pre_menor, eixo_y_exato, eixo_y_predict, eixo_x)
+        
+    def gerar_preview_Kn(self):
+        prev = Treinamento()
+        salvar_m = self.save_model.get()
+
+        cidade = self.get_end(self.data_s.get())
+
+        '''if self.data_s.get() == 'Cidade alvo':
+            cidade = r'E:\IC\Interface_Grafica\Dados_verificacao\alvo_limpa.txt'
+        elif self.data_s.get() == 'Vizinha A':
+            cidade = r'E:\IC\Interface_Grafica\Dados_verificacao\vizinhaA_limpa.txt'
+        elif self.data_s.get() == 'Vizinha B':
+            cidade = r'E:\IC\Interface_Grafica\Dados_verificacao\vizinhaB_limpa.txt'
+        elif self.data_s.get() == 'Vizinha C':
+            cidade = r'E:\IC\Interface_Grafica\Dados_verificacao\vizinhaC_limpa.txt'''
+
+        n_tes = int(self.num_teste.get())
+        divisao = int(self.por_trei.get())
+        n_neig = self.n_neighbors_v.get()
+        algor = self.algorithm_v.get()
+        leaf_s = self.leaf_size_v.get()
+        pv = self.p_v.get()
+        n_job = self.n_jobs_v.get()
+
+        if n_job.isdigit() == True:
+            n_job = int(n_job)
+            
+        indicador = self.ind_s.get()
+        if indicador == 'Precipitação':
+            indicador = 3
+        elif indicador == 'Temperatura máxima':
+            indicador = 4
+        elif indicador == 'Temperatura mínima':
+            indicador = 5
+
+        pts, media_ea, media_er, maior_ea, exat_maior, pre_maior, menor_ea, exat_menor, pre_menor, eixo_y_exato, eixo_y_predict, eixo_x = prev.KNeighbors(cidade, indicador, divisao, n_tes, n_neig, algor, leaf_s, pv, n_job, salvar_m)
+        self.data_prev(pts, media_ea, media_er, maior_ea, exat_maior, pre_maior, menor_ea, exat_menor, pre_menor, eixo_y_exato, eixo_y_predict, eixo_x)
+
+    def gera_param(self):
+        opcao = self.ml_selected.get()
+        if opcao == 'Decision Trees':
+            w = Canvas(self, width=615, height=900, background=fundo, border=0)
+            w.place(x=10, y=95)
+            self.lbf_p = LabelFrame(self, text='Parâmetros', width=600, height=395, font='Arial 12 bold', fg ='white', bg=fundo).place(x=20, y=100)
+
+            self.criterion_v = StringVar()
+            lista_cri = ["squared_error", "friedman_mse", "absolute_error", "poisson"]
+            self.criterion_v.set("squared_error")
+            Label(self, text='Criterion:', font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=120)
+            ttk.Combobox(self, values=lista_cri, textvariable=self.criterion_v, width=25, font='Arial 12', justify=CENTER, state='readonly').place(x=50, y=145)
+
+            self.splitter_v = StringVar()
+            lista_spl = ["best", "random"]
+            self.splitter_v.set("best")
+            Label(self, text='Splitter:', font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=120)
+            ttk.Combobox(self, values=lista_spl, textvariable=self.splitter_v, width=25, font='Arial 12', justify=CENTER, state='readonly').place(x=340, y=145)
+            
+
+            self.maxd_v = StringVar()
+            self.maxd_v.set("10")
+            Label(self, text="Max_deph (int):", font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=180)
+            self.ent_maxd = Entry(self, textvariable=self.maxd_v, width=27, font='Arial 12', justify=CENTER).place(x=50, y=205)
+
+            self.minsam_s_v = IntVar()
+            self.minsam_s_v.set(2)
+            Label(self, text="Min_samples_split (int/float (.)):", font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=180)
+            self.minsam_s = Entry(self, textvariable=self.minsam_s_v, width=27, font='Arial 12', justify=CENTER).place(x=340, y=205)
+            
+            self.minsam_l_v = IntVar()
+            self.minsam_l_v.set(50)
+            Label(self, text="Min_samples_leaf (int/float (.)):", font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=240)
+            self.ent_minsam_l = Entry(self, textvariable=self.minsam_l_v, width=27, font='Arial 12', justify=CENTER).place(x=50, y=265)
+
+            self.minweifra_l_v = StringVar()
+            self.minweifra_l_v.set("0.0")
+            Label(self, text="Min_weight_fraction_leaf (float (.)):", font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=240)
+            self.ent_minweifra_l = Entry(self, textvariable=self.minweifra_l_v, width=27, font='Arial 12', justify=CENTER).place(x=340, y=265)
+            
+            self.maxfeat_v = StringVar()
+            self.maxfeat_v.set("auto")
+            Label(self, text="Max_features :", font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=300)
+            Label(self, text="Valores para Max_features:", font='Arial 12 bold', fg=fun_alt, bg=fundo).place(x=340, y=300)
+            Label(self, text="int / float / 'auto' / 'sqrt' / 'log2'", font='Arial 12 bold', fg=fun_alt, bg=fundo).place(x=340, y=325)
+            self.ent_maxfeat_v = Entry(self, textvariable=self.maxfeat_v, width=27, font='Arial 12', justify=CENTER).place(x=50, y=325)
+
+            self.maxleaf_n = StringVar()
+            self.maxleaf_n.set("10")
+            Label(self, text="Max_leaf_nodes (int)", font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=360)
+            self.ent_maxleaf_n = Entry(self, textvariable=self.maxleaf_n, width=27, font='Arial 12', justify=CENTER).place(x=50, y=385)
+
+            self.minimp_dec = StringVar()
+            self.minimp_dec.set("0.0")
+            Label(self, text="Min_impurity_decrease (float (.))", font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=360)
+            self.ent_minimp_dec = Entry(self, textvariable=self.minimp_dec, width=27, font='Arial 12', justify=CENTER).place(x=340, y=385)
+
+            self.ccp_alp_v = StringVar()
+            self.ccp_alp_v.set("0.0")
+            Label(self, text="Ccp_alpha (value>0.0 float):", font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=420)
+            self.ent_ccp_alp = Entry(self, textvariable=self.ccp_alp_v, width=27, font='Arial 12', justify=CENTER).place(x=50, y=445)
+
+            self.lbf_d = LabelFrame(self, text='Dados', width=600, height=170, font='Arial 12 bold', fg ='white', bg=fundo).place(x=20, y=500)
+
+            self.data_s = StringVar()
+            self.data_s.set('Cidade alvo')
+            lista_dt = ['Cidade alvo', 'Vizinha A', 'Vizinha B', 'Vizinha C']
+            Label(self, text="Dados para treinamento:", font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=520)
+            self.combo_c = ttk.Combobox(self, values=lista_dt, textvariable=self.data_s, width=25, font='Arial 12', justify=CENTER, state='readonly').place(x=50, y=545)
+
+            self.ind_s = StringVar()
+            self.ind_s.set('Temperatura máxima')
+            lista_ind = ['Precipitação', 'Temperatura máxima', 'Temperatura mínima']
+            Label(self, text='Indicador:', font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=520)
+            ttk.Combobox(self, values=lista_ind, textvariable=self.ind_s, width=25, font='Arial 12', justify=CENTER, state='readonly').place(x=340, y=545)
+
+            self.por_trei = IntVar()
+            self.por_trei.set(70)
+            Label(self, text="Porção para treinamento:", font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=580)
+            Scale(self, variable=self.por_trei, orient=HORIZONTAL, length=240).place(x=50, y=605)
+        
+            self.num_teste = IntVar()
+            self.num_teste.set(5)
+            Label(self, text="Número de testes (int):", font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=580)
+            self.ent_num_teste = Entry(self, textvariable=self.num_teste, width=27, font='Arial 12', justify=CENTER).place(x=340, y=605)
+
+           
+            Button(self, text='Preview', font='Arial 11 bold', fg='white', bg=fun_b, width=25, command=self.gerar_preview_dt).place(x=50, y=685)
+            #Button(self, text='Salvar Paramt.', font='Arial 11 bold', fg='white', bg=fun_b, width=25, command=self.salvar_paramt).place(x=340, y=685)
+            self.save_model = IntVar()
+            Checkbutton(self, text='Salvar modelo', variable=self.save_model, bg=fundo, font='Arial 12 bold', activebackground=fundo).place(x=340, y=685)
+        elif opcao == 'Neural network':
+            w = Canvas(self, width=615, height=900, background=fundo, border=0)
+            w.place(x=10, y=95)
+            self.lbf_para_nn = LabelFrame(self, text='Parâmetros', width=600, height=625, font='Arial 12 bold', fg='white', bg=fundo).place(x=20, y=100)
+
+            self.activation_v = StringVar()
+            lista_act = ['identity', 'logistic', 'tanh', 'relu']
+            self.activation_v.set('relu')
+            Label(self, text='Activation:', font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=120)
+            ttk.Combobox(self, values=lista_act, textvariable=self.activation_v, width=25, font='Arial 12', justify=CENTER, state='readonly').place(x=50, y=145)
+            
+            self.solver_v = StringVar()
+            lista_sol = ['lbfgs', 'sgd', 'adam']
+            self.solver_v.set('adam')
+            Label(self, text='Solver:', font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=120)
+            ttk.Combobox(self, values=lista_sol, textvariable=self.solver_v, width=25, font='Arial 12', justify=CENTER, state='readonly').place(x=340, y=145)
+
+            self.alpha_v = StringVar()
+            self.alpha_v.set('0.0001')
+            Label(self, text='Alpha:', font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=180)
+            Entry(self, textvariable=self.alpha_v, width=27, font='Arial 12', justify=CENTER).place(x=50, y=205)
+
+            self.batch_size_v = StringVar()
+            self.batch_size_v.set('auto')
+            Label(self, text='Batch_size (int / "auto"):', font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=180)
+            Entry(self, textvariable=self.batch_size_v, width=27, font='Arial 12', justify=CENTER).place(x=340, y=205)
+
+            self.learning_rate_v = StringVar()
+            lista_learn = ['constant', 'invscaling', 'adaptive']
+            self.learning_rate_v.set('constant')
+            Label(self, text="Learning_rate:", font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=240)
+            ttk.Combobox(self, values=lista_learn, textvariable=self.learning_rate_v, width=25, font='Arial 12', justify=CENTER, state='readonly').place(x=50, y=265)
+
+            self.learning_rate_init_v = StringVar()
+            self.learning_rate_init_v.set('0.001')
+            Label(self, text='Learning_rate_init (float):', font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=240)
+            Entry(self, textvariable=self.learning_rate_init_v, width=27, font='Arial 12', justify=CENTER).place(x=340, y=265)
+
+            self.power_t_v = StringVar()
+            self.power_t_v.set('0.5')
+            Label(self, text='Power_t (float):', font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=300)
+            Entry(self, textvariable=self.power_t_v, width=27, font='Arial 12', justify=CENTER).place(x=50, y=325)
+
+            self.max_iter_v = StringVar()
+            self.max_iter_v.set('200')
+            Label(self, text='Max_iter (int):', font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=300)
+            Entry(self, textvariable=self.max_iter_v, width=27, font='Arial 12', justify=CENTER).place(x=340, y=325)
+
+
+            self.shuffle_v = BooleanVar()
+            self.shuffle_v.set(True)
+            Label(self, text='Shuffle (bool 1/0):', font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=360)
+            Entry(self, textvariable=self.shuffle_v, width=27, font='Arial 12', justify=CENTER).place(x=50, y=385)
+
+            self.tol_v = StringVar()
+            self.tol_v.set('0.0001')
+            Label(self, text='Tol (float):', font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=360)
+            Entry(self, textvariable=self.tol_v, width=27, font='Arial 12', justify=CENTER).place(x=340, y=385)
+
+            self.verbose_v = BooleanVar()
+            self.verbose_v.set(False)
+            Label(self, text='Verbose (bool 1/0):', font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=420)
+            Entry(self, textvariable=self.verbose_v, width=27, font='Arial 12', justify=CENTER).place(x=50, y=445)
+
+            self.warm_start_v = BooleanVar()
+            self.warm_start_v.set(False)
+            Label(self, text='Warm_start (bool 1/0):', font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=420)
+            Entry(self, textvariable=self.warm_start_v, width=27, font='Arial 12', justify=CENTER).place(x=340, y=445)
+
+            self.momentum_v = StringVar()
+            self.momentum_v.set('0.9')
+            Label(self, text='Momentum (float):', font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=480)
+            Entry(self, textvariable=self.momentum_v, width=27, font='Arial 12', justify=CENTER).place(x=50, y=505)
+
+            self.nesterovs_momentum_v = BooleanVar()
+            self.nesterovs_momentum_v.set(True)
+            Label(self, text='Nesterovs_momentum:', font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=480)
+            Entry(self, textvariable=self.nesterovs_momentum_v, width=27, font='Arial 12', justify=CENTER).place(x=340, y=505)
+
+            self.early_stopping_v = BooleanVar()
+            self.early_stopping_v.set(False)
+            Label(self, text='Early_stopping:', font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=540)
+            Entry(self, textvariable=self.early_stopping_v, width=27, font='Arial 12', justify=CENTER).place(x=50, y=565)
+
+            self.validation_fraction_v = StringVar()
+            self.validation_fraction_v.set('0.1')
+            Label(self, text='Validation_fraction (float):', font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=540)
+            Entry(self, textvariable=self.validation_fraction_v, width=27, font='Arial 12', justify=CENTER).place(x=340, y=565)
+
+            self.beta_1_v = StringVar()
+            self.beta_1_v.set('0.9')
+            Label(self, text='Beta_1 (float):', font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=600)
+            Entry(self, textvariable=self.beta_1_v, width=27, font='Arial 12', justify=CENTER).place(x=50, y=625)
+
+            self.beta_2_v = StringVar()
+            self.beta_2_v.set('0.999')
+            Label(self, text='Beta_2 (float):', font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=600)
+            Entry(self, textvariable=self.beta_2_v, width=27, font='Arial 12', justify=CENTER).place(x=340, y=625)
+
+            self.n_iter_no_change_v = StringVar()
+            self.n_iter_no_change_v.set('10')
+            Label(self, text='N_iter_no_change (int):', font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=660)
+            Entry(self, textvariable=self.n_iter_no_change_v, width=27, font='Arial 12', justify=CENTER).place(x=50, y=685)
+
+            self.max_fun_v = StringVar()
+            self.max_fun_v.set('15000')
+            Label(self, text='max_fun (int):', font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=660)
+            Entry(self, textvariable=self.max_fun_v, width=27, font='Arial 12', justify=CENTER).place(x=340, y=685)
+
+            '''   data   '''
+            self.lbf_dt_nn = LabelFrame(self, text='Dados', width=600, height=170, font='Arial 12 bold', fg ='white', bg=fundo).place(x=20, y=730)
+
+            self.data_s = StringVar()
+            self.data_s.set('Cidade alvo')
+            lista_dt = ['Cidade alvo', 'Vizinha A', 'Vizinha B', 'Vizinha C']
+            Label(self, text="Dados para treinamento:", font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=750)
+            self.combo_c = ttk.Combobox(self, values=lista_dt, textvariable=self.data_s, width=25, font='Arial 12', justify=CENTER, state='readonly').place(x=50, y=775)
+
+            self.ind_s = StringVar()
+            self.ind_s.set('Temperatura máxima')
+            lista_ind = ['Precipitação', 'Temperatura máxima', 'Temperatura mínima']
+            Label(self, text='Indicador:', font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=750)
+            ttk.Combobox(self, values=lista_ind, textvariable=self.ind_s, width=25, font='Arial 12', justify=CENTER, state='readonly').place(x=340, y=775)
+
+            self.por_trei = IntVar()
+            self.por_trei.set(70)
+            Label(self, text="Porção para treinamento:", font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=810)
+            Scale(self, variable=self.por_trei, orient=HORIZONTAL, length=240).place(x=50, y=835)
+        
+            self.num_teste = IntVar()
+            self.num_teste.set(5)
+            Label(self, text="Número de testes (int):", font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=810)
+            self.ent_num_teste = Entry(self, textvariable=self.num_teste, width=27, font='Arial 12', justify=CENTER).place(x=340, y=835)
+
+            Button(self, text='Preview', font='Arial 11 bold', fg='white', bg=fun_b, width=25, command=self.gerar_preview_nn).place(x=50, y=915)
+            self.save_model = IntVar()
+            Checkbutton(self, text='Salvar modelo', variable=self.save_model, bg=fundo, font='Arial 12 bold', activebackground=fundo).place(x=340, y=915)
+        elif opcao == 'Nearest Neighbors':
+
+           w = Canvas(self, width=615, height=900, background=fundo, border=0)
+           w.place(x=10, y=95)
+           
+
+           self.lbf_para_nn = LabelFrame(self, text='Parâmetros', width=600, height=205, font='Arial 12 bold', fg='white', bg=fundo).place(x=20, y=100) 
+
+           self.n_neighbors_v = IntVar()
+           self.n_neighbors_v.set(5)
+           Label(self, text='N_neighbors (int):', font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=120)
+           Entry(self, textvariable=self.n_neighbors_v, width=27, font='Arial 12', justify=CENTER).place(x=50, y=145)
+
+           self.algorithm_v = StringVar()
+           lista_alg = ['auto', 'ball_tree', 'kd_tree', 'brute']
+           self.algorithm_v.set('auto')
+           Label(self, text='Algorithm:', font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=120)
+           ttk.Combobox(self, values=lista_alg, textvariable=self.algorithm_v, width=25, font='Arial 12', justify=CENTER, state='readonly').place(x=340, y=145)
+
+           self.leaf_size_v = IntVar()
+           self.leaf_size_v.set(30)
+           Label(self, text='Leaf_size (int):', font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=180)
+           Entry(self, textvariable=self.leaf_size_v, width=27, font='Arial 12', justify=CENTER).place(x=50, y=205)
+
+           self.p_v = IntVar()
+           self.p_v.set(2)
+           Label(self, text='P (int):', font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=180)
+           Entry(self, textvariable=self.p_v, width=27, font='Arial 12', justify=CENTER).place(x=340, y=205)
+
+           self.n_jobs_v = StringVar()
+           self.n_jobs_v.set('5')
+           Label(self, text='N_jobs (int / "None"):', font='Aria 12 bold', fg='white', bg=fundo).place(x=50, y=240)
+           Entry(self, textvariable=self.n_jobs_v, width=27, font='Arial 12', justify=CENTER).place(x=50, y=265)
+
+           self.lbf_d = LabelFrame(self, text='Dados', width=600, height=170, font='Arial 12 bold', fg ='white', bg=fundo).place(x=20, y=320)
+
+           self.data_s = StringVar()
+           self.data_s.set('Cidade alvo')
+           lista_dt = ['Cidade alvo', 'Vizinha A', 'Vizinha B', 'Vizinha C']
+           Label(self, text="Dados para treinamento:", font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=340)
+           self.combo_c = ttk.Combobox(self, values=lista_dt, textvariable=self.data_s, width=25, font='Arial 12', justify=CENTER, state='readonly').place(x=50, y=365)
+
+           self.ind_s = StringVar()
+           self.ind_s.set('Temperatura máxima')
+           lista_ind = ['Precipitação', 'Temperatura máxima', 'Temperatura mínima']
+           Label(self, text='Indicador:', font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=340)
+           ttk.Combobox(self, values=lista_ind, textvariable=self.ind_s, width=25, font='Arial 12', justify=CENTER, state='readonly').place(x=340, y=365)
+
+           self.por_trei = IntVar()
+           self.por_trei.set(70)
+           Label(self, text="Porção para treinamento:", font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=400)
+           Scale(self, variable=self.por_trei, orient=HORIZONTAL, length=240).place(x=50, y=425)
+
+           self.num_teste = IntVar()
+           self.num_teste.set(5)
+           Label(self, text="Número de testes (int):", font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=400)
+           self.ent_num_teste = Entry(self, textvariable=self.num_teste, width=27, font='Arial 12', justify=CENTER).place(x=340, y=425)
+
+           Button(self, text='Preview', font='Arial 11 bold', fg='white', bg=fun_b, width=25, command=self.gerar_preview_Kn).place(x=50, y=505)
+           self.save_model = IntVar()
+           Checkbutton(self, text='Salvar modelo', variable=self.save_model, bg=fundo, font='Arial 12 bold', activebackground=fundo).place(x=340, y=505) 
+        elif opcao == 'Support Vector':
+            w = Canvas(self, width=615, height=900, background=fundo, border=0)
+            w.place(x=10, y=95)
+            self.lbf_para_nn = LabelFrame(self, text='Parâmetros', width=600, height=385, font='Arial 12 bold', fg='white', bg=fundo).place(x=20, y=100)
+            
+            self.kernel_v = StringVar()
+            lista_ker = ['linear', 'poly', 'rbf', 'sigmoid']
+            self.kernel_v.set('rbf')
+            Label(self, text='Kernel:', font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=120)
+            ttk.Combobox(self, values=lista_ker, textvariable=self.kernel_v, width=25, font='Arial 12', justify=CENTER, state='readonly').place(x=50, y=145)
+
+            self.degree_v = IntVar()
+            self.degree_v.set(3)
+            Label(self, text='Degree (int):', font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=120)
+            Entry(self, textvariable=self.degree_v, font='Arial 12', width=27, justify=CENTER).place(x=340, y=145) 
+
+            self.gamma_v = StringVar()
+            self.gamma_v.set('scale')
+            Label(self, text='Gamma ("scale", "auto", float):', font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=180)
+            Entry(self, textvariable=self.gamma_v, font='Arial 12', width=27, justify=CENTER).place(x=50, y=205)
+
+            self.coef0_v = StringVar()
+            self.coef0_v.set('0.0')
+            Label(self, text='Coef0 (float):', font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=180)
+            Entry(self, textvariable=self.coef0_v, font='Arial 12', width=27, justify=CENTER).place(x=340, y=205)
+
+            self.tol_v = StringVar()
+            self.tol_v.set('0.001')
+            Label(self, text='Tol (float):', font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=240)
+            Entry(self, textvariable=self.tol_v, font='Arial 12', width=27, justify=CENTER).place(x=50, y=265)
+
+            self.c_v = StringVar()
+            self.c_v.set('1.0')
+            Label(self, text='C (float):', font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=240)
+            Entry(self, textvariable=self.c_v, font='Arial 12', width=27, justify=CENTER).place(x=340, y=265)
+
+            self.epsilon_v = StringVar()
+            self.epsilon_v.set('0.1')
+            Label(self, text='Epsilon (float):', font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=300)
+            Entry(self, textvariable=self.epsilon_v, font='Arial 12', width=27, justify=CENTER).place(x=50, y=325)   
+
+            self.shrinking_v = BooleanVar()
+            self.shrinking_v.set(True)
+            Label(self, text='Shrinking (Bool):', font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=300)
+            Entry(self, textvariable=self.shrinking_v, font='Arial 12', width=27, justify=CENTER).place(x=340, y=325)
+
+            self.cache_size_v = StringVar()
+            self.cache_size_v.set('200')
+            Label(self, text='Cache_size (float):', font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=360)
+            Entry(self, textvariable=self.cache_size_v, font='Arial 12', width=27, justify=CENTER).place(x=50, y=385)   
+
+            self.verbose_v = BooleanVar()
+            self.verbose_v.set(False)
+            Label(self, text='Verbose (Bool):', font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=360)
+            Entry(self, textvariable=self.verbose_v, font='Arial 12', width=27, justify=CENTER).place(x=340, y=385)
+
+            self.maxiter_v = IntVar()
+            self.maxiter_v.set(-1)
+            Label(self, text='Max_iter (int):', font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=420)
+            Entry(self, textvariable=self.maxiter_v, font='Arial 12', width=27, justify=CENTER).place(x=50, y=445)
+
+            self.lbf_dt_nn = LabelFrame(self, text='Dados', width=600, height=170, font='Arial 12 bold', fg ='white', bg=fundo).place(x=20, y=500)
+
+            self.data_s = StringVar()
+            self.data_s.set('Cidade alvo')
+            lista_dt = ['Cidade alvo', 'Vizinha A', 'Vizinha B', 'Vizinha C']
+            Label(self, text="Dados para treinamento:", font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=520)
+            self.combo_c = ttk.Combobox(self, values=lista_dt, textvariable=self.data_s, width=25, font='Arial 12', justify=CENTER, state='readonly').place(x=50, y=545)
+
+            self.ind_s = StringVar()
+            self.ind_s.set('Temperatura máxima')
+            lista_ind = ['Precipitação', 'Temperatura máxima', 'Temperatura mínima']
+            Label(self, text='Indicador:', font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=520)
+            ttk.Combobox(self, values=lista_ind, textvariable=self.ind_s, width=25, font='Arial 12', justify=CENTER, state='readonly').place(x=340, y=545)
+
+            self.por_trei = IntVar()
+            self.por_trei.set(70)
+            Label(self, text="Porção para treinamento:", font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=580)
+            Scale(self, variable=self.por_trei, orient=HORIZONTAL, length=240).place(x=50, y=605)
+        
+            self.num_teste = IntVar()
+            self.num_teste.set(5)
+            Label(self, text="Número de testes (int):", font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=580)
+            self.ent_num_teste = Entry(self, textvariable=self.num_teste, width=27, font='Arial 12', justify=CENTER).place(x=340, y=605)
+
+            Button(self, text='Preview', font='Arial 11 bold', fg='white', bg=fun_b, width=25, command=self.gerar_preview_svm).place(x=50, y=680)
+            self.save_model = IntVar()
+            Checkbutton(self, text='Salvar modelo', variable=self.save_model, bg=fundo, font='Arial 12 bold', activebackground=fundo).place(x=340, y=680)
+        elif opcao == 'Gaussian Process':
+            w = Canvas(self, width=615, height=900, background=fundo, border=0)
+            w.place(x=10, y=95)
+            self.lbf_para_nn = LabelFrame(self, text='Parâmetros', width=600, height=205, font='Arial 12 bold', fg='white', bg=fundo).place(x=20, y=100)
+            
+            self.alpha_gp = StringVar()
+            self.alpha_gp.set('0.0000000001')
+            Label(self, text='Alpha (float): ', font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=120)
+            Entry(self, textvariable=self.alpha_gp, font='Arial 12', width=27, justify=CENTER).place(x=50, y=145)
+            
+            self.n_restarts_op = IntVar()
+            self.n_restarts_op.set(0)
+            Label(self, text='N_restart_optimizer (int):', font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=120)
+            Entry(self, textvariable=self.n_restarts_op, font='Arial 12', width=27, justify=CENTER).place(x=340, y=145)
+
+            self.normalize_y_gp = BooleanVar()
+            self.normalize_y_gp.set(0)
+            Label(self, text='Normalize_y (Bool 1/0):', font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=180)
+            Entry(self, textvariable=self.normalize_y_gp, font='Arial 12', width=27, justify=CENTER).place(x=50, y=205)
+
+            self.copy_X_train = BooleanVar()
+            self.copy_X_train.set(0)
+            Label(self, text='Copy_X_train (Bool 1/0):', font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=180)
+            Entry(self, textvariable=self.copy_X_train, font='Arial 12', width=27, justify=CENTER).place(x=340, y=205)
+
+            self.rand_state_gp = StringVar()
+            self.rand_state_gp.set('None')
+            Label(self, text='Random_state ("None" / int):', font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=240)
+            Entry(self, textvariable=self.rand_state_gp, font='Arial 12', width=27, justify=CENTER).place(x=50, y=265)
+            
+
+            self.lbf_dt_nn = LabelFrame(self, text='Dados', width=600, height=170, font='Arial 12 bold', fg ='white', bg=fundo).place(x=20, y=320)
+
+            self.data_s = StringVar()
+            self.data_s.set('Cidade alvo')
+            lista_dt = ['Cidade alvo', 'Vizinha A', 'Vizinha B', 'Vizinha C']
+            Label(self, text="Dados para treinamento:", font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=340)
+            self.combo_c = ttk.Combobox(self, values=lista_dt, textvariable=self.data_s, width=25, font='Arial 12', justify=CENTER, state='readonly').place(x=50, y=365)
+
+            self.ind_s = StringVar()
+            self.ind_s.set('Temperatura máxima')
+            lista_ind = ['Precipitação', 'Temperatura máxima', 'Temperatura mínima']
+            Label(self, text='Indicador:', font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=340)
+            ttk.Combobox(self, values=lista_ind, textvariable=self.ind_s, width=25, font='Arial 12', justify=CENTER, state='readonly').place(x=340, y=365)
+
+            self.por_trei = IntVar()
+            self.por_trei.set(70)
+            Label(self, text="Porção para treinamento:", font='Arial 12 bold', fg='white', bg=fundo).place(x=50, y=400)
+            Scale(self, variable=self.por_trei, orient=HORIZONTAL, length=240).place(x=50, y=425)
+        
+            self.num_teste = IntVar()
+            self.num_teste.set(5)
+            Label(self, text="Número de testes (int):", font='Arial 12 bold', fg='white', bg=fundo).place(x=340, y=400)
+            self.ent_num_teste = Entry(self, textvariable=self.num_teste, width=27, font='Arial 12', justify=CENTER).place(x=340, y=425)
+
+            Button(self, text='Preview', font='Arial 11 bold', fg='white', bg=fun_b, width=25, command=self.gerar_preview_svm).place(x=50, y=505)
+            self.save_model = IntVar()
+            Checkbutton(self, text='Salvar modelo', variable=self.save_model, bg=fundo, font='Arial 12 bold', activebackground=fundo).place(x=340, y=505)
+    '''
+    def __init__(self, master=None):
+        Toplevel.__init__(self, master=master)
+        self.title('Aprendizado de máquina')
+        self.geometry('800x800')
+        self.configure(background=fundo)
+
+        Label(self, text='APRENDIZADO DE MÁQUINA', font='Arial 14 bold', fg='white', bg=fundo).place(x=200, y=20)
+
+        self.ml_selected = StringVar()
+        self.ml_selected.set('Decision Trees')
+        lista_ml = ['Decision Trees', 'Neural network', 'Nearest Neighbors', 'Support Vector', 'Gaussian Process']
+        ttk.Combobox(self, values=lista_ml, textvariable=self.ml_selected, width=28, font='Arial 12', justify=CENTER, state='readonly').place(x=20, y=60)
+        Button(self, text='Escolher Machine Learning', font='Arial 11 bold', fg='white', bg=fun_ap, width=30, command=self.gera_param).place(x=340, y=59)
+    '''
 class Aprendizado_Marquina(Toplevel):
     def int_float(self, val):
         try:
@@ -3050,7 +3697,7 @@ class Principal(Frame):
         self.lista_todas_est.sort()
         self.cidade_alvo = StringVar()
         Label(self, text='Cidade Alvo:', font='Arial 11 bold', bg=fundo, fg='white').place(x=20, y=65)
-        self.comb_alvo = ttk.Combobox(self, values=self.lista_todas_est, textvariable=self.cidade_alvo, width=20, font='Arial 11', justify=CENTER, state='readonly').place(x=20, y=85)
+        self.comb_alvo = ttk.Combobox(self, values=self.lista_todas_est, textvariable=self.cidade_alvo, width=20, font='Arial 11', justify=CENTER, state='normal').place(x=20, y=85)
 
         self.cidade_va = StringVar()
         Label(self, text='Vizinha A:', font='Arial 11 bold', bg=fundo, fg='white').place(x=220, y=65)
@@ -3073,7 +3720,7 @@ class Principal(Frame):
 
         self.hist_cididade = [self.cidade_alvo.get(), self.cidade_va.get(),self.cidade_vb.get(), self.cidade_vc.get()]
         self.cid_hist = StringVar()
-        ttk.Combobox(self, values=self.hist_cididade, textvariable=self.cid_hist, width=18, font='Arial 12', justify=CENTER, state='readonly').place(x=20, y=355)
+        
 
         ind_tg = ''
         for i in self.list_end:
@@ -3106,8 +3753,8 @@ class Principal(Frame):
         datat.vizinhaB = ind_vb
         datat.vizinhaC = ind_vc
         #datat.download = save
-        datat.download = 'F:/IC/1 - MetaClima'
-        self.local_save = 'F:/IC/1 - MetaClima'
+        datat.download = os.getcwd()
+        self.local_save = os.getcwd()
         datat.get_data_trada()
         msg.showinfo(title="Sucesso!", message="Arquivos Selecionados com sucesso!")
     
